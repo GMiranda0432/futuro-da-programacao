@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabriel de Miranda teste</title>
+    <style>
+        .wall-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 15px;
+    background-color: white;
+    z-index: 10;
+}
+
+.wall-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 15px;
+    background-color: white;
+    z-index: 10;
+}
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            color: white;
+            user-select: none;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #game-screen {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .wall {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 15px;
+            background-color: white;
+            z-index: 10;
+        }
+        .wall-left { left: 0; }
+        .wall-right { right: 0; }
+
+        #player {
+    position: absolute;
+    bottom: 80px;
+    width: 50px;
+    height: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 5;
+}
+.triangle-target {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 30px solid transparent;
+    border-right: 30px solid transparent;
+    border-bottom: 60px solid #00ff88;
+    z-index: 4;
+    filter: drop-shadow(0 0 6px #00ff88);
+}
+.circle-target {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: 3px solid #00ffcc;
+    border-radius: 50%;
+    z-index: 4;
+    filter: drop-shadow(0 0 6px #00ffcc);
+}
+        .bullet {
+    position: absolute;
+    width: 20px;
+    height: 25px;
+    background-image: url("tiro.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 4;
+}
+
+        .target {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: none;
+    border: 3px solid #00ff88;
+    transform: rotate(45deg);
+    z-index: 4;
+    filter: drop-shadow(0 0 6px #00ff88);
+}
+
+        .overlay-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    text-align: center;
+}
+.rect-target {
+    position: absolute;
+    width: 60px;
+    height: 40px;
+    background: none;
+    border: 3px solid #00ccff;
+    z-index: 4;
+    filter: drop-shadow(0 0 6px #00ccff);
+}
+        button {
+    padding: 15px 30px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: black;
+    color: white;
+    border: 3px solid white;
+    font-family: 'Press Start 2P', cursive;
+}
+
+button:hover {
+    border-color: yellow;
+    color: yellow;
+}
+
+button:active {
+    border-color: red;
+    color: red;
+}
+
+        #score-hud {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 20;
+        }
+
+        #mobile-controls {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 30;
+        }
+
+        .d-pad {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 24px;
+            border: 2px solid white;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+
+        #btn-shoot {
+            width: 90px;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        @media (min-width: 768px) {
+            #mobile-controls { display: none; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+<audio id="bg-music" src="background.mp3" loop></audio>
+<audio id="game-over-music" src="gameover.mp3"></audio>
+
+<div id="game-screen">
+    <div class="wall wall-left"></div>
+    <div class="wall wall-right"></div>
+    <div class="wall wall-top"></div>
+<div class="wall wall-bottom"></div>
+    
+    <div id="score-hud">Pontos: <span id="score-display">0</span></div>
+
+    <div id="player"></div>
+
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div class="control-btn" id="btn-left">◀</div>
+            <div class="control-btn" id="btn-right">▶</div>
+        </div>
+        <div class="control-btn" id="btn-shoot">ATIRAR</div>
+    </div>
+</div>
+
+<div id="start-screen" class="overlay-screen">
+    <h1 style="color: yellow;">UNDERTALE</h1>
+    <p style="color: white; font-size: 12px; margin: 20px 0;">
+    MOVER: WASD ou ← ↑ ↓ →<br><br>
+    ATIRAR: ESPAÇO
+</p>
+    <p style="color: white;">Pressione Start</p>
+    <button id="btn-start">Start Game</button>
+    <button id="btn-shop">Almas</button>
+</div>
+
+<div id="game-over-screen" class="overlay-screen" style="display: none;">
+    <h1 style="color: red;">GAME OVER</h1>
+    <h2>Sua Pontuação: <span id="final-score">0</span></h2>
+    <button id="btn-restart">Tentar Novamente</button>
+    <button id="btn-shop-2">Almas</button>
+</div>
+<div id="shop-screen" class="overlay-screen" style="display: none;">
+    <h1 style="color: yellow;">ALMAS</h1>
+
+    <div id="shop-buttons" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+        <button class="shop-item" data-color="red" style="color:red;">VERMELHO</button>
+        <button class="shop-item" data-color="orange" style="color:orange;">LARANJA</button>
+        <button class="shop-item" data-color="white" style="color:white;">BRANCO</button>
+        <button class="shop-item" data-color="green" style="color:lime;">VERDE</button>
+        <button class="shop-item" data-color="blue" style="color:blue;">AZUL</button>
+        <button class="shop-item" data-color="purple" style="color:violet;">ROXO</button>
+        <button class="shop-item" data-color="cyan" style="color:cyan;">CIANO</button>
+        <button class="shop-item" data-color="yellow" style="color:yellow;">AMARELO</button>
+    </div>
+
+    <button id="btn-back-menu" style="margin-top: 30px;">Voltar</button>
+</div>
+<script>
+    let coins = 0;
+let ownedSkins = { yellow: true };
+let equippedSkin = "yellow";
+    const gameScreen = document.getElementById('game-screen');
+    const player = document.getElementById('player');
+    const scoreDisplay = document.getElementById('score-display');
+    
+    const bgMusic = document.getElementById('bg-music');
+    const gameOverMusic = document.getElementById('game-over-music');
+
+    let bullets = [];
+    let targets = [];
+    let isPlaying = false;
+    let score = 0;
+    let gameLoopId;
+    let spawnTimeoutId;
+let difficulty = 1;
+    const playerSpeed = 8;
+    const bulletSpeed = 15;
+    const wallWidth = 15;
+    
+    let lastShootTime = 0;
+    const shootCooldown = 150;
+
+   const keys = { left: false, right: false, up: false, down: false, shoot: false };
+
+    function init() {
+        player.style.left = (gameScreen.offsetWidth / 2 - player.offsetWidth / 2) + 'px';
+        player.style.bottom = '80px';
+    }
+function setTargetColor(target, color) {
+    if (target.dataset.type === "triangle") {
+        target.style.borderBottomColor = color;
+        target.style.filter = `drop-shadow(0 0 6px ${color})`;
+    } else {
+        target.style.borderColor = color;
+        target.style.filter = `drop-shadow(0 0 6px ${color})`;
+    }
+}
+    function startGame() {
+        updatePlayerSkin();
+    difficulty = 1;
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-over-screen').style.display = 'none';
+        
+        bullets.forEach(b => b.remove());
+        targets.forEach(t => t.remove());
+        bullets = [];
+        targets = [];
+        score = 0;
+        updateScore(0);
+        init();
+
+        isPlaying = true;
+        
+        gameOverMusic.pause();
+        gameOverMusic.currentTime = 0;
+        bgMusic.play().catch(() => {});
+
+        randomSpawn();
+        gameLoop();
+    }
+    function updatePlayerSkin() {
+    player.style.backgroundImage = `url("player_${equippedSkin}.png")`;
+}
+function createCircleTarget() {
+    const target = document.createElement('div');
+    target.classList.add('circle-target');
+
+    const maxLeft = gameScreen.offsetWidth - wallWidth - 40;
+    const minLeft = wallWidth;
+    const randomX = Math.floor(Math.random() * (maxLeft - minLeft + 1)) + minLeft;
+
+    target.style.left = randomX + 'px';
+    target.style.top = '-50px';
+
+    target.dataset.baseSpeed = 0.8;
+    target.dataset.hp = 3;
+    target.dataset.type = "circle";
+    target.dataset.time = 0;
+
+    gameScreen.appendChild(target);
+    targets.push(target);
+}
+function createTriangleTarget() {
+    const target = document.createElement('div');
+    target.classList.add('triangle-target');
+
+    const maxLeft = gameScreen.offsetWidth - wallWidth - 60;
+    const minLeft = wallWidth;
+    const randomX = Math.floor(Math.random() * (maxLeft - minLeft + 1)) + minLeft;
+
+    target.style.left = randomX + 'px';
+    target.style.top = '-50px';
+
+    target.dataset.baseSpeed = 1; // bem lento
+    target.dataset.hp = 3;
+    target.dataset.type = "triangle";
+
+    gameScreen.appendChild(target);
+    targets.push(target);
+}
+    function gameOver() {
+        isPlaying = false;
+        cancelAnimationFrame(gameLoopId);
+        clearTimeout(spawnTimeoutId);
+
+        bgMusic.pause();
+        gameOverMusic.play().catch(() => {});
+
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('game-over-screen').style.display = 'flex';
+    }
+
+    function updateScore(points) {
+    score += points;
+    coins += points;
+
+    scoreDisplay.innerText = score;
+
+    difficulty = 1 + (score / 100);
+}
+
+    function createBullet() {
+        const bullet = document.createElement('div');
+        bullet.classList.add('bullet');
+        bullet.style.left = ( parseFloat(player.style.left) + player.offsetWidth / 2 - bullet.offsetWidth / 2) + 'px';
+        bullet.style.bottom = (parseFloat(player.style.bottom) + player.offsetHeight) + 'px';
+        gameScreen.appendChild(bullet);
+        bullets.push(bullet);
+    }
+
+   function randomSpawn() {
+    if (!isPlaying) return;
+
+    const amount = Math.floor(Math.random() * 3) + 1;
+
+    for (let i = 0; i < amount; i++) {
+        const rand = Math.random();
+
+        if (rand < 0.4) createTarget(); // estrela
+        else if (rand < 0.7) createRectTarget(); // retângulo
+        else if (rand < 0.9) createTriangleTarget(); // triângulo
+        else createCircleTarget(); // círculo
+    }
+
+    const nextSpawnTime = Math.random() * 1200 + 800;
+    spawnTimeoutId = setTimeout(randomSpawn, nextSpawnTime);
+}
+
+    function createTarget() {
+    const target = document.createElement('div');
+    target.classList.add('target');
+
+    const maxLeft = gameScreen.offsetWidth - wallWidth - 40;
+    const minLeft = wallWidth;
+    const randomX = Math.floor(Math.random() * (maxLeft - minLeft + 1)) + minLeft;
+
+    target.style.left = randomX + 'px';
+    target.style.top = '-50px';
+
+    target.dataset.baseSpeed = Math.random() * 2 + 2;
+    target.dataset.hp = 3;
+
+    target.dataset.type = "star";
+    target.dataset.startX = randomX;
+    target.dataset.time = 0;
+
+    gameScreen.appendChild(target);
+    targets.push(target);
+}
+function createRectTarget() {
+    const target = document.createElement('div');
+    target.classList.add('rect-target');
+
+    const maxLeft = gameScreen.offsetWidth - wallWidth - 60;
+    const minLeft = wallWidth;
+    const randomX = Math.floor(Math.random() * (maxLeft - minLeft + 1)) + minLeft;
+
+    target.style.left = randomX + 'px';
+    target.style.top = '-50px';
+
+    target.dataset.baseSpeed = Math.random() * 1.5 + 1.5; // MAIS LENTO
+    target.dataset.hp = 3;
+    target.dataset.type = "rect";
+
+    gameScreen.appendChild(target);
+    targets.push(target);
+}
+    function checkCollision(element1, element2) {
+    const r1 = element1.getBoundingClientRect();
+    const r2 = element2.getBoundingClientRect();
+
+    const shrink = 15; 
+
+    return !(
+        r1.right < r2.left + shrink ||
+        r1.left > r2.right - shrink ||
+        r1.bottom < r2.top + shrink ||
+        r1.top > r2.bottom - shrink
+    );
+}
+function openShop() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-over-screen').style.display = 'none';
+    document.getElementById('shop-screen').style.display = 'flex';
+}
+
+document.getElementById('btn-shop').onclick = openShop;
+document.getElementById('btn-shop-2').onclick = openShop;
+
+document.getElementById('btn-back-menu').onclick = () => {
+    document.getElementById('shop-screen').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'flex';
+};
+    function gameLoop() {
+    if (!isPlaying) return;
+
+    let pLeft = parseFloat(player.style.left);
+    let pBottom = parseFloat(player.style.bottom);
+
+    if (keys.left && pLeft > wallWidth) {
+        player.style.left = (pLeft - playerSpeed) + 'px';
+    }
+
+    if (keys.right && pLeft < gameScreen.offsetWidth - wallWidth - player.offsetWidth) {
+        player.style.left = (pLeft + playerSpeed) + 'px';
+    }
+
+    if (keys.up && pBottom < gameScreen.offsetHeight - wallWidth - player.offsetHeight) {
+        player.style.bottom = (pBottom + playerSpeed) + 'px';
+    }
+
+    if (keys.down && pBottom > wallWidth) {
+        player.style.bottom = (pBottom - playerSpeed) + 'px';
+    }
+
+    if (keys.shoot) {
+        const now = Date.now();
+        if (now - lastShootTime > shootCooldown) {
+            createBullet();
+            lastShootTime = now;
+        }
+    }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const bullet = bullets[i];
+        let bottomPos = parseFloat(bullet.style.bottom);
+        bottomPos += bulletSpeed;
+        bullet.style.bottom = bottomPos + 'px';
+
+        if (bottomPos > gameScreen.offsetHeight) {
+            bullet.remove();
+            bullets.splice(i, 1);
+        }
+    }
+
+    for (let i = targets.length - 1; i >= 0; i--) {
+        const target = targets[i];
+
+        let topPos = parseFloat(target.style.top);
+        let baseSpeed = parseFloat(target.dataset.baseSpeed);
+        let speed = baseSpeed * difficulty;
+
+        if (target.dataset.type === "triangle") {
+
+            let tLeft = parseFloat(target.style.left);
+            let tTop = parseFloat(target.style.top);
+
+            let pLeft = parseFloat(player.style.left);
+            let pBottom = parseFloat(player.style.bottom);
+            let playerY = gameScreen.offsetHeight - pBottom;
+
+            let dx = pLeft - tLeft;
+            let dy = playerY - tTop;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > 0) {
+                tLeft += (dx / dist) * speed;
+                tTop += (dy / dist) * speed;
+            }
+
+            target.style.left = tLeft + 'px';
+            target.style.top = tTop + 'px';
+
+        } else {
+
+            topPos += speed;
+            target.style.top = topPos + 'px';
+
+            if (target.dataset.type === "star") {
+                let time = parseFloat(target.dataset.time);
+                time += 0.05;
+                target.dataset.time = time;
+
+                let startX = parseFloat(target.dataset.startX);
+                let amplitude = 50;
+
+                target.style.left = (startX + Math.sin(time) * amplitude) + 'px';
+            }
+            if (target.dataset.type === "circle") {
+                let time = parseFloat(target.dataset.time);
+                time += 0.05;
+                target.dataset.time = time;
+
+                let scale = 1 + Math.sin(time) * 0.5;
+                target.style.transform = `scale(${scale})`;
+            }
+        }
+        if (checkCollision(player, target)) {
+            gameOver();
+            return;
+        }
+        if (topPos > gameScreen.offsetHeight) {
+            target.remove();
+            targets.splice(i, 1);
+            continue;
+        }
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            const bullet = bullets[j];
+
+            if (checkCollision(bullet, target)) {
+                bullet.remove();
+                bullets.splice(j, 1);
+
+                let hp = parseInt(target.dataset.hp) - 1;
+                target.dataset.hp = hp;
+
+                if (hp === 2) setTargetColor(target, "yellow");
+else if (hp === 1) setTargetColor(target, "red");
+                else if (hp <= 0) {
+                    target.remove();
+                    targets.splice(i, 1);
+                    updateScore(10);
+                }
+                break;
+            }
+        }
+    }
+
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+    window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+    if (e.key === 'ArrowUp' || e.key === 'w') keys.up = true;
+    if (e.key === 'ArrowDown' || e.key === 's') keys.down = true;
+    if (e.key === ' ') keys.shoot = true;
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+    if (e.key === 'ArrowUp' || e.key === 'w') keys.up = false;
+    if (e.key === 'ArrowDown' || e.key === 's') keys.down = false;
+    if (e.key === ' ') keys.shoot = false;
+});
+
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnShoot = document.getElementById('btn-shoot');
+
+    btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = true; });
+    btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); keys.left = false; });
+
+    btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys.right = true; });
+    btnRight.addEventListener('touchend', (e) => { e.preventDefault(); keys.right = false; });
+
+    btnShoot.addEventListener('touchstart', (e) => { e.preventDefault(); keys.shoot = true; });
+    btnShoot.addEventListener('touchend', (e) => { e.preventDefault(); keys.shoot = false; });
+document.querySelectorAll('.shop-item').forEach(btn => {
+    btn.onclick = () => {
+        const color = btn.dataset.color;
+
+        if (!ownedSkins[color]) {
+            if (coins >= 100) {
+                coins -= 100;
+                ownedSkins[color] = true;
+                alert("Comprado!");
+            } else {
+                alert("Sem pontos suficientes!");
+                return;
+            }
+        }
+
+        equippedSkin = color;
+        updatePlayerSkin();
+        alert("Equipado!");
+    };
+});
+    document.getElementById('btn-start').addEventListener('click', startGame);
+    document.getElementById('btn-restart').addEventListener('click', startGame);
+function openShop() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-over-screen').style.display = 'none';
+    document.getElementById('shop-screen').style.display = 'flex';
+}
+
+document.getElementById('btn-shop').onclick = openShop;
+document.getElementById('btn-shop-2').onclick = openShop;
+
+document.getElementById('btn-back-menu').onclick = () => {
+    document.getElementById('shop-screen').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'flex';
+};
+    window.onload = init;
+</script>
+</body>
+</html>
